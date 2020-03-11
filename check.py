@@ -54,7 +54,7 @@ def cluster(cluster_needed, office_map):
     min_j_cluster = 0
 
     # Initialise 2d array
-    cluster_data = [[[] for column in range(max_cluster)] for row in range(max_cluster)]
+    cluster_data = [[0 for column in range(max_cluster)] for row in range(max_cluster)]
     cluster_title = [[] for item in range(max_cluster)]
 
     # Populate 2d array
@@ -63,12 +63,12 @@ def cluster(cluster_needed, office_map):
         for i in range(max_cluster):
             if i >= j:
                 if i == j:
-                    cluster_data[j][i] = [0]
+                    cluster_data[j][i] = 0
                 else:
-                    cluster_data[j][i] = [dijkstra_distance(
+                    cluster_data[j][i] = dijkstra_distance(
                         [office_map[j][0], office_map[j][1]],
                         [office_map[i][0], office_map[i][1]]
-                        )]
+                        )
             else:
                 cluster_data[j][i] = cluster_data[i][j]
 
@@ -92,58 +92,82 @@ def cluster(cluster_needed, office_map):
         min_j_cluster = 0
         for j in range(max_cluster):
             for i in range(j, max_cluster):
-                for entry in cluster_data[j][i]:
-                    if entry != 0:
-                        if entry < min_distance:
-                            min_distance = entry
-                            min_i_cluster = i
-                            min_j_cluster = j
+                if cluster_data[j][i] != 0:
+                    if cluster_data[j][i] < min_distance:
+                        min_distance = cluster_data[j][i]
+                        min_i_cluster = i
+                        min_j_cluster = j
 
         print(min_i_cluster)
         print(min_j_cluster)
 
-        # Combine 2d array
-        if min_i_cluster > min_j_cluster:
-            max_cluster = min_i_cluster
-            min_cluster = min_j_cluster
-        else:
-            max_cluster = min_j_cluster
-            min_cluster = min_i_cluster
-        for i in range(max_cluster):
-            for item in cluster_data[i][min_cluster]:
-                cluster_data[i][max_cluster].append(item)
+        # Combine 2d cluster array
+        new_cluster_data = [[0 for column in range(max_cluster-1)] for row in range(max_cluster-1)]
+        store_cluster_data = [0 for column in range(max_cluster-1)]
+
+        jj = 0
+        for j in range(max_cluster):
+            if j != min_i_cluster:
+                ii = 0
+                for i in range(max_cluster):
+                    if i != min_i_cluster:
+                        if i == min_j_cluster:
+                            if cluster_data[j][i] < cluster_data[j][min_i_cluster]:
+                                new_cluster_data[jj][ii] = cluster_data[j][i]
+                            else:
+                                new_cluster_data[jj][ii] = cluster_data[j][min_i_cluster]
+                        else:
+                            new_cluster_data[jj][ii] = cluster_data[j][i]
+                        ii = ii + 1
+                jj = jj + 1
+            else:
+                ii = 0
+                for i in range(max_cluster):
+                    if i != min_i_cluster:
+                        if i == min_j_cluster:
+                            if cluster_data[j][i] < cluster_data[j][min_i_cluster]:
+                                store_cluster_data[ii] = cluster_data[j][i]
+                            else:
+                                store_cluster_data[ii] = cluster_data[j][min_i_cluster]
+                        else:
+                            store_cluster_data[ii] = cluster_data[j][i]
+                        ii = ii + 1
+
+        for i in range(max_cluster-1):
+            if new_cluster_data[min_j_cluster][i] > store_cluster_data[i]:
+                new_cluster_data[min_j_cluster][i] = store_cluster_data[i]
 
         # Combine the title
-        for item in cluster_title[min_i_cluster]:
-            cluster_title[min_j_cluster].append(item)
-        # Remove unneeded column and row
+        new_cluster_title = [[] for column in range(max_cluster-1)]
+
+        ii = 0
+        for i in range(max_cluster):
+            if i != min_i_cluster:
+                if i == min_j_cluster:
+                    temp = []
+                    for item in cluster_title[i]:
+                        temp.append(item)
+                    for item in cluster_title[min_i_cluster]:
+                        temp.append(item)
+                    new_cluster_title[ii] = temp
+                else:
+                    new_cluster_title[ii] = cluster_title[i]
+                ii = ii + 1
+
+        # Update cluster
+        cluster_data = new_cluster_data
+        new_cluster_data = None
+        cluster_title = new_cluster_title
+        new_cluster_title = None
+        
+        # Next iteration
         max_cluster = max_cluster - 1
-        #new_cluster_data = [[[] for column in range(max_cluster)] for row in range(max_cluster)]
-        #temp_j = 0
-        #j = 0
-        #while j < max_cluster:
-        #    if j == min_i_cluster:
-        #        temp_j = temp_j + 1
-        #    temp_i = 0
-        #    i = 0
-        #    while i < max_cluster:
-        #        if i == min_i_cluster:
-        #            temp_i = temp_i + 1
-        #        new_cluster_data[j][i] = cluster_data[temp_j][temp_i]
-        #        temp_i = temp_i + 1
-        #        i = i + 1
-        #    temp_j = temp_j + 1
-        #    j = j + 1
-        ## Update cluster
-        #cluster_data = None
-        #cluster_data = new_cluster_data
-        #new_cluster_data = None
 
         print_cluster()
 
 def main():
     print("buffer")
-    cluster(3, [
+    cluster(2, [
         [15, 1, 1700],
         [14, 6, 1200],
         [3, 8, 1100],
